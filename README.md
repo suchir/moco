@@ -1,3 +1,25 @@
+pretrain
+```
+python main_moco.py \
+  -a resnet18 \
+  --lr 0.03 \
+  --batch-size 256 \
+  --dist-url 'tcp://localhost:10001' --multiprocessing-distributed --world-size 1 --rank 0 \
+  --mlp --moco-t 0.2 --aug-plus --cos \
+  --moco-k 49152 \
+  data
+```
+linear classifier
+```
+python main_lincls.py \
+  -a resnet18 \
+  --lr 30.0 \
+  --batch-size 256 \
+  --pretrained checkpoint.pth.tar \
+  --dist-url 'tcp://localhost:10001' --multiprocessing-distributed --world-size 1 --rank 0 \
+  data
+```
+
 ## MoCo: Momentum Contrast for Unsupervised Visual Representation Learning
 
 <p align="center">

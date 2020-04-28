@@ -19,11 +19,11 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-import torchvision.models as models
+import resnet
 
-model_names = sorted(name for name in models.__dict__
+model_names = sorted(name for name in resnet.__dict__
     if name.islower() and not name.startswith("__")
-    and callable(models.__dict__[name]))
+    and callable(resnet.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('data', metavar='DIR',
@@ -142,7 +142,7 @@ def main_worker(gpu, ngpus_per_node, args):
                                 world_size=args.world_size, rank=args.rank)
     # create model
     print("=> creating model '{}'".format(args.arch))
-    model = models.__dict__[args.arch]()
+    model = resnet.__dict__[args.arch](num_classes=10)
 
     # freeze all layers but the last fc
     for name, param in model.named_parameters():
@@ -245,10 +245,12 @@ def main_worker(gpu, ngpus_per_node, args):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
-    train_dataset = datasets.ImageFolder(
-        traindir,
-        transforms.Compose([
-            transforms.RandomResizedCrop(224),
+    train_dataset = datasets.CIFAR10(
+        './data',
+        train=True,
+        download=True,
+        transform=transforms.Compose([
+            transforms.RandomResizedCrop(32),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize,
@@ -264,9 +266,7 @@ def main_worker(gpu, ngpus_per_node, args):
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
     val_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(valdir, transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+        datasets.CIFAR10('./data', train=False, download=True, transform=transforms.Compose([
             transforms.ToTensor(),
             normalize,
         ])),
