@@ -30,8 +30,7 @@ model_names = sorted(name for name in resnet.__dict__
     and callable(resnet.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-parser.add_argument('data', metavar='DIR',
-                    help='path to dataset')
+parser.add_argument('dataset', help='dataset (cifar/miniimagenet)')
 parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet50',
                     choices=model_names,
                     help='model architecture: ' +
@@ -217,7 +216,6 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     # Data loading code
-    traindir = os.path.join(args.data, 'train')
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
     if args.aug_plus:
@@ -243,9 +241,15 @@ def main_worker(gpu, ngpus_per_node, args):
             normalize
         ]
 
-    train_dataset = datasets.CIFAR10('./data', train=True,
-        transform=moco.loader.TwoCropsTransform(transforms.Compose(augmentation)),
-        download=True)
+    if args.dataset == 'cifar':
+        train_dataset = datasets.CIFAR10('./data', train=True,
+            transform=moco.loader.TwoCropsTransform(transforms.Compose(augmentation)),
+            download=True)
+    elif args.dataset == 'miniimagenet':
+        train_dataset = moco.loader.MiniImagenet(split='train',
+            transform=moco.loader.TwoCropsTransform(transforms.Compose(augmentation)))
+    else:
+        assert False, 'invalid dataset'
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
